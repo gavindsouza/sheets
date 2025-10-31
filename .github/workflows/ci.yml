@@ -82,6 +82,8 @@ jobs:
           bench init --skip-redis-config-generation --skip-assets --python "$(which python)" ~/frappe-bench
           mysql --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'"
           mysql --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
+        env:
+          BENCH_USE_UV: 'true'
 
       - name: Install
         working-directory: /home/runner/frappe-bench
@@ -93,6 +95,7 @@ jobs:
           bench build
         env:
           CI: 'Yes'
+          BENCH_USE_UV: 'true'
 
       - name: Run Tests
         working-directory: /home/runner/frappe-bench
