@@ -23,7 +23,7 @@ jobs:
         frappe_version: [version-14, version-15, develop]
         include:
           - frappe_version: version-14
-            python_version: '3.11'
+            python_version: '3.10'
             node_version: 18
           - frappe_version: version-15
             python_version: '3.11'

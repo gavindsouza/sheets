@@ -5,7 +5,7 @@ app_title = "Sheets"
 app_publisher = "Gavin D'souza"
 app_description = "Effortless synchronization between your online SpreadSheet Apps & ERPNext"
 app_email = "gavin18d@gmail.com"
-app_license = "No License"
+app_license = "GPLv3"
 
 # Includes in <head>
 # ------------------
