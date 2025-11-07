@@ -91,8 +91,10 @@ class DocTypeWorksheetMapping(Document):
                         data_imported_csv_file[idx] = update_row
                         continue
 
-        # Hack! use csv module to convert list to csv later
-        data_imported_csv = [",".join(x) for x in data_imported_csv_file]
+        # Convert list to properly formatted CSV using csv module
+        buffer = StringIO()
+        csv_writer(buffer).writerows(data_imported_csv_file)
+        data_imported_csv = buffer.getvalue().splitlines()
 
         # 3. compare generated csv with remote csv to calculate updates
         equivalent_remote_csv = self.fetch_remote_worksheet().splitlines()[: self.counter]
