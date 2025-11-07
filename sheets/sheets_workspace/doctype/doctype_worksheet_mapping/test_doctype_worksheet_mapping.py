@@ -24,13 +24,11 @@ class TestDocTypeWorksheetMapping(FrappeTestCase):
         # Convert using the proper csv module method (like the fix)
         buffer = StringIO()
         csv_writer(buffer).writerows(test_data)
-        csv_output = buffer.getvalue().splitlines()
+        csv_string = buffer.getvalue()
 
         # Parse the CSV output back to verify it's valid
-        parsed_data = []
-        for line in csv_output:
-            row = next(csv_reader(StringIO(line)))
-            parsed_data.append(row)
+        # Must parse the entire string, not line by line, to handle embedded newlines
+        parsed_data = list(csv_reader(StringIO(csv_string)))
 
         # Verify data integrity - all special characters should be preserved
         self.assertEqual(len(parsed_data), len(test_data))
