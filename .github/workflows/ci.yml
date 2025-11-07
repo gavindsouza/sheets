@@ -25,12 +25,15 @@ jobs:
           - frappe_version: version-14
             python_version: '3.10'
             node_version: 18
+            mariadb_version: '10.6'
           - frappe_version: version-15
             python_version: '3.11'
             node_version: 18
+            mariadb_version: '10.6'
           - frappe_version: develop
             python_version: '3.11'
             node_version: 22
+            mariadb_version: '11.8'
     name: Server (Frappe ${{ matrix.frappe_version }})
 
     services:
@@ -47,7 +50,7 @@ jobs:
         ports:
           - 12000:6379
       mariadb:
-        image: mariadb:11.8
+        image: mariadb:${{ matrix.mariadb_version }}
         env:
           MYSQL_ROOT_PASSWORD: root
         ports:
