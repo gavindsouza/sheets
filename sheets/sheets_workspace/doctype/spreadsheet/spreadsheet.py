@@ -123,7 +123,7 @@ class SpreadSheet(Document):
             sheet = sheet_client.open_by_url(self.sheet_url)
         except gs.exceptions.APIError as e:
             frappe.throw(
-                f"Share spreadsheet with the following Service Account Email and try again: <b>{sheet_client.auth.service_account_email}</b>",
+                f"Share spreadsheet with the following Service Account Email and try again: <b>{sheet_client.http_client.auth.service_account_email}</b>",
                 exc=e,
             )
         self._set_sheet_metadata(sheet)

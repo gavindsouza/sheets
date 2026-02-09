@@ -11,7 +11,7 @@ dependencies = [
     # frappe -- https://github.com/frappe/frappe is installed via 'bench init'
 
     # Core dependencies
-    "gspread~=5.7.2",
+    "gspread>=6.0,<7",
     "croniter~=1.3",
     "cron-descriptor~=1.2.35",
 ]
