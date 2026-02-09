@@ -220,6 +220,7 @@ class DocTypeWorksheetMapping(Document):
         data_import.spreadsheet_id = self.parent_doc.name
         data_import.worksheet_id = self.name
         data_import.import_file = import_file.file_url
+        data_import.flags.ignore_links = True
 
         return data_import.save()
 
