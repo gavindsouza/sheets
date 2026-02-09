@@ -261,6 +261,50 @@ class DocTypeWorksheetMapping(Document):
         csv_writer(buffer).writerows(values)
         return buffer.getvalue()
 
+    def preview_data(self, max_rows=10) -> dict:
+        """Fetch a preview of the worksheet data for mapping verification.
+
+        Returns a dict with:
+          - header: list of column names
+          - rows: list of data rows (up to max_rows)
+          - total_rows: total number of data rows in the worksheet
+          - field_mapping: dict mapping column names to matched DocType fields
+        """
+        import gspread as gs
+
+        try:
+            remote_spreadsheet = self.parent_doc.get_sheet_client().open_by_url(
+                self.parent_doc.sheet_url
+            )
+            remote_worksheet = remote_spreadsheet.get_worksheet_by_id(self.worksheet_id)
+        except (gs.exceptions.APIError, gs.exceptions.WorksheetNotFound):
+            return {"header": [], "rows": [], "total_rows": 0, "field_mapping": {}}
+
+        values = remote_worksheet.get_all_values()
+        if not values:
+            return {"header": [], "rows": [], "total_rows": 0, "field_mapping": {}}
+
+        header = values[0]
+        data_rows = values[1:]
+        total_rows = len(data_rows)
+
+        field_mapping = {}
+        if self.mapped_doctype:
+            dt_meta = frappe.get_meta(self.mapped_doctype)
+            field_labels = {df.label: df.fieldname for df in dt_meta.fields}
+            for col in header:
+                if col in field_labels:
+                    field_mapping[col] = field_labels[col]
+                elif col == "ID":
+                    field_mapping[col] = "name"
+
+        return {
+            "header": header,
+            "rows": data_rows[:max_rows],
+            "total_rows": total_rows,
+            "field_mapping": field_mapping,
+        }
+
     def fetch_remote_spreadsheet(self) -> str:
         full_sheet_content = self.fetch_remote_worksheet()
         counter = 0 if self.reset_worksheet_on_import else self.counter
