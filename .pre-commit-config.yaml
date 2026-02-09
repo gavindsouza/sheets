@@ -7,7 +7,7 @@ repos:
     rev: v4.4.0
     hooks:
       - id: trailing-whitespace
-        files: "remote_actions.*"
+        files: "sheets/.*"
         exclude: ".*json$|.*txt$|.*csv|.*md"
       - id: check-yaml
       - id: check-merge-conflict
