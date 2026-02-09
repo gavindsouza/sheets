@@ -822,13 +822,8 @@ class TestImporterPatch(FrappeTestCase):
         self.assertFalse(hasattr(Importer, "patched"))
         self.assertEqual(Importer.update_record, original_method)
 
-    def test_patch_importer_leaks_on_exception(self):
-        """patch_importer() does NOT restore on exception (known limitation).
-
-        The @contextmanager implementation lacks try/finally, so cleanup
-        code after yield is skipped when an exception occurs. This test
-        documents the current behavior.
-        """
+    def test_patch_importer_restores_on_exception(self):
+        """patch_importer() restores original even if an exception occurs."""
         from frappe.core.doctype.data_import.importer import Importer
 
         from sheets.sheets_workspace.doctype.spreadsheet.spreadsheet import patch_importer
@@ -840,14 +835,8 @@ class TestImporterPatch(FrappeTestCase):
                 self.assertTrue(hasattr(Importer, "patched"))
                 raise RuntimeError("Simulated failure")
 
-        # BUG: patch is NOT cleaned up on exception because
-        # patch_importer() doesn't use try/finally around yield
-        self.assertTrue(hasattr(Importer, "patched"))
-        self.assertNotEqual(Importer.update_record, original_method)
-
-        # Manual cleanup for test isolation
-        Importer.update_record = original_method
-        del Importer.patched
+        self.assertFalse(hasattr(Importer, "patched"))
+        self.assertEqual(Importer.update_record, original_method)
 
 
 class TestSchedulerIntegration(FrappeTestCase):

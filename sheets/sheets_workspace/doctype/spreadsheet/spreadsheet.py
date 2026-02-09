@@ -169,6 +169,8 @@ def patch_importer():
     _official_method = Importer.update_record
     Importer.update_record = update_record_patch
     Importer.patched = True
-    yield
-    Importer.update_record = _official_method
-    del Importer.patched
+    try:
+        yield
+    finally:
+        Importer.update_record = _official_method
+        del Importer.patched

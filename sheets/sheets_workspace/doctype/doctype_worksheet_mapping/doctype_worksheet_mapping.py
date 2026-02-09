@@ -1,6 +1,7 @@
 # Copyright (c) 2023, Gavin D'souza and contributors
 # For license information, please see license.txt
 
+import time
 from csv import reader as csv_reader
 from csv import writer as csv_writer
 from difflib import SequenceMatcher
@@ -14,6 +15,9 @@ from frappe.model.document import Document
 from frappe.utils import get_link_to_form
 
 from sheets.constants import INSERT, UPDATE, UPSERT
+
+RETRYABLE_STATUS_CODES = {429, 500, 502, 503}
+MAX_RETRIES = 3
 
 if TYPE_CHECKING:
     from frappe.core.doctype.data_import.data_import import DataImport
@@ -227,21 +231,27 @@ class DocTypeWorksheetMapping(Document):
     def fetch_remote_worksheet(self):
         import gspread as gs
 
-        try:
-            remote_spreadsheet = self.parent_doc.get_sheet_client().open_by_url(
-                self.parent_doc.sheet_url
-            )
-            remote_worksheet = remote_spreadsheet.get_worksheet_by_id(self.worksheet_id)
-        except gs.exceptions.APIError as e:
-            frappe.throw(
-                f"Failed to fetch worksheet {self.worksheet_id} from remote spreadsheet: {e}",
-                title="Google Sheets API Error",
-            )
-        except gs.exceptions.WorksheetNotFound:
-            frappe.throw(
-                f"Worksheet with ID {self.worksheet_id} not found in the spreadsheet.",
-                title="Worksheet Not Found",
-            )
+        for attempt in range(1 + MAX_RETRIES):
+            try:
+                remote_spreadsheet = self.parent_doc.get_sheet_client().open_by_url(
+                    self.parent_doc.sheet_url
+                )
+                remote_worksheet = remote_spreadsheet.get_worksheet_by_id(self.worksheet_id)
+                break
+            except gs.exceptions.APIError as e:
+                status_code = getattr(e.response, "status_code", None)
+                if status_code in RETRYABLE_STATUS_CODES and attempt < MAX_RETRIES:
+                    time.sleep(2**attempt)
+                    continue
+                frappe.throw(
+                    f"Failed to fetch worksheet {self.worksheet_id} from remote spreadsheet: {e}",
+                    title="Google Sheets API Error",
+                )
+            except gs.exceptions.WorksheetNotFound:
+                frappe.throw(
+                    f"Worksheet with ID {self.worksheet_id} not found in the spreadsheet.",
+                    title="Worksheet Not Found",
+                )
 
         values = remote_worksheet.get_all_values()
         if not values:
