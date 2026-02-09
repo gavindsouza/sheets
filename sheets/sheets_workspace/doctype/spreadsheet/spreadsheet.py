@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 class SpreadSheet(Document):
     worksheet_ids: "list[DocTypeWorksheetMapping]"
     server_script: str
-    frequency_cron = str
+    frequency_cron: str
     import_frequency: str
     sheet_url: str
     sheet_name: str
