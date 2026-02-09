@@ -23,6 +23,9 @@ ACCEPTABLE_IMPORT_STATUSES = ("Success", "Partial Success")
 
 class DocTypeWorksheetMapping(Document):
     def trigger_worksheet_import(self):
+        if not self.mapped_doctype:
+            frappe.throw("Mapped DocType is required to trigger import.")
+
         import_type = self.get_import_type()
         if import_type == UPSERT:
             return self.trigger_upsert_worksheet_import()
@@ -67,16 +70,32 @@ class DocTypeWorksheetMapping(Document):
         )
 
         # 1. generate csv file with all the inserted data imported
-        data_imported_csv = ""
+        data_imported_csv_file = []
         for csv_file in insert_csv_generator:  # order of imports (first to last)
-            if not data_imported_csv:
-                data_imported_csv = csv_file
+            rows = list(csv_reader(StringIO(csv_file)))
+            if not data_imported_csv_file:
+                data_imported_csv_file = rows
             else:
-                data_imported_csv += "\n" + csv_file.split("\n", 1)[-1]
+                data_imported_csv_file.extend(rows[1:])  # skip header
 
-        data_imported_csv_file = list(csv_reader(StringIO(data_imported_csv)))
+        if not data_imported_csv_file:
+            frappe.msgprint(
+                "No imported data found to compare for UPSERT.",
+                alert=True,
+                indicator="orange",
+            )
+            return self.trigger_insert_worksheet_import()
+
         data_imported_csv_file_header = data_imported_csv_file[0]
-        id_field_imported_index = data_imported_csv_file_header.index(self.worksheet_id_field)
+
+        id_field = self.worksheet_id_field
+        if id_field not in data_imported_csv_file_header:
+            frappe.throw(
+                f"ID field '{id_field}' not found in imported data columns: "
+                f"{', '.join(data_imported_csv_file_header)}"
+            )
+
+        id_field_imported_index = data_imported_csv_file_header.index(id_field)
 
         # 2. apply updates captured over the csv file
         for csv_file in update_csv_geneator:
@@ -91,8 +110,10 @@ class DocTypeWorksheetMapping(Document):
                         data_imported_csv_file[idx] = update_row
                         continue
 
-        # Hack! use csv module to convert list to csv later
-        data_imported_csv = [",".join(x) for x in data_imported_csv_file]
+        # convert list of lists back to CSV lines using proper csv module
+        csv_buffer = StringIO()
+        csv_writer(csv_buffer).writerows(data_imported_csv_file)
+        data_imported_csv = csv_buffer.getvalue().splitlines()
 
         # 3. compare generated csv with remote csv to calculate updates
         equivalent_remote_csv = self.fetch_remote_worksheet().splitlines()[: self.counter]
@@ -203,13 +224,30 @@ class DocTypeWorksheetMapping(Document):
         return data_import.save()
 
     def fetch_remote_worksheet(self):
-        remote_spreadsheet = self.parent_doc.get_sheet_client().open_by_url(
-            self.parent_doc.sheet_url
-        )
-        remote_worksheet = remote_spreadsheet.get_worksheet_by_id(self.worksheet_id)
+        import gspread as gs
+
+        try:
+            remote_spreadsheet = self.parent_doc.get_sheet_client().open_by_url(
+                self.parent_doc.sheet_url
+            )
+            remote_worksheet = remote_spreadsheet.get_worksheet_by_id(self.worksheet_id)
+        except gs.exceptions.APIError as e:
+            frappe.throw(
+                f"Failed to fetch worksheet {self.worksheet_id} from remote spreadsheet: {e}",
+                title="Google Sheets API Error",
+            )
+        except gs.exceptions.WorksheetNotFound:
+            frappe.throw(
+                f"Worksheet with ID {self.worksheet_id} not found in the spreadsheet.",
+                title="Worksheet Not Found",
+            )
+
+        values = remote_worksheet.get_all_values()
+        if not values:
+            return ""
 
         buffer = StringIO()
-        csv_writer(buffer).writerows(remote_worksheet.get_all_values())
+        csv_writer(buffer).writerows(values)
         return buffer.getvalue()
 
     def fetch_remote_spreadsheet(self) -> str:

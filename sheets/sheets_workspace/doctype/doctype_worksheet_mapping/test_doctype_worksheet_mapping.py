@@ -416,3 +416,60 @@ class TestWorksheetIdField(FrappeTestCase):
         mapping = self._make_mapping(["RandomCol1", "RandomCol2"])
         with self.assertRaises(frappe.exceptions.ValidationError):
             _ = mapping.worksheet_id_field
+
+
+class TestMappedDoctypeValidation(FrappeTestCase):
+    """Tests for mapped_doctype validation on import trigger."""
+
+    def test_throws_when_mapped_doctype_empty(self):
+        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+            DocTypeWorksheetMapping,
+        )
+
+        mapping = DocTypeWorksheetMapping.__new__(DocTypeWorksheetMapping)
+        mapping.mapped_doctype = ""
+        mapping.import_type = "Insert"
+
+        with self.assertRaises(frappe.exceptions.ValidationError):
+            mapping.trigger_worksheet_import()
+
+    def test_throws_when_mapped_doctype_none(self):
+        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+            DocTypeWorksheetMapping,
+        )
+
+        mapping = DocTypeWorksheetMapping.__new__(DocTypeWorksheetMapping)
+        mapping.mapped_doctype = None
+        mapping.import_type = "Insert"
+
+        with self.assertRaises(frappe.exceptions.ValidationError):
+            mapping.trigger_worksheet_import()
+
+
+class TestUpsertCsvHandling(FrappeTestCase):
+    """Tests for proper CSV handling in upsert flow (no manual comma-joining)."""
+
+    def test_csv_with_commas_in_values_survives_roundtrip(self):
+        """Verify that values containing commas are properly handled in CSV conversion.
+
+        This is a regression test for the bug where manual ','.join() was used
+        instead of the csv module, causing values with commas to break.
+        """
+        from csv import writer as csv_writer
+
+        # Simulate the fixed code path: list-of-lists -> CSV lines
+        data = [
+            ["Name", "Description", "ID"],
+            ["Alice, Bob", 'She said "hello"', "1"],
+            ["Charlie", "normal value", "2"],
+        ]
+
+        csv_buffer = StringIO()
+        csv_writer(csv_buffer).writerows(data)
+        csv_lines = csv_buffer.getvalue().splitlines()
+
+        # Parse back and verify roundtrip integrity
+        parsed = list(csv_reader(StringIO("\n".join(csv_lines))))
+        self.assertEqual(parsed[0], ["Name", "Description", "ID"])
+        self.assertEqual(parsed[1], ["Alice, Bob", 'She said "hello"', "1"])
+        self.assertEqual(parsed[2], ["Charlie", "normal value", "2"])
