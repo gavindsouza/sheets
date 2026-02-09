@@ -3,7 +3,7 @@
 
 from csv import reader as csv_reader
 from io import StringIO
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -61,6 +61,7 @@ class TestTriggerWorksheetImport(FrappeTestCase):
 
         mapping = DocTypeWorksheetMapping.__new__(DocTypeWorksheetMapping)
         mapping.import_type = import_type
+        mapping.mapped_doctype = "ToDo"
         return mapping
 
     @patch(
@@ -155,6 +156,22 @@ class TestFetchRemoteSpreadsheet(FrappeTestCase):
 class TestFetchRemoteWorksheet(FrappeTestCase):
     """Tests for fetch_remote_worksheet() CSV conversion."""
 
+    def setUp(self):
+        super().setUp()
+        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+            DocTypeWorksheetMapping,
+        )
+
+        self._mock_parent = MagicMock()
+        self._parent_doc_patcher = patch.object(
+            DocTypeWorksheetMapping, "parent_doc", new_callable=PropertyMock, return_value=self._mock_parent
+        )
+        self._parent_doc_patcher.start()
+
+    def tearDown(self):
+        self._parent_doc_patcher.stop()
+        super().tearDown()
+
     def _make_mapping(self, worksheet_id=0):
         from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
@@ -163,10 +180,7 @@ class TestFetchRemoteWorksheet(FrappeTestCase):
         mapping = DocTypeWorksheetMapping.__new__(DocTypeWorksheetMapping)
         mapping.worksheet_id = worksheet_id
 
-        # mock parent_doc with sheet client
-        mock_parent = MagicMock()
-        mapping.parent_doc = mock_parent
-        return mapping, mock_parent
+        return mapping, self._mock_parent
 
     def test_converts_values_to_csv(self):
         mapping, mock_parent = self._make_mapping()
@@ -222,20 +236,38 @@ class TestGenerateImportFileName(FrappeTestCase):
             DocTypeWorksheetMapping,
         )
 
-        mapping = DocTypeWorksheetMapping.__new__(DocTypeWorksheetMapping)
-        mapping.worksheet_id = 42
-
         mock_parent = MagicMock()
         mock_parent.sheet_name = "Test Sheet"
-        mapping.parent_doc = mock_parent
 
-        filename = mapping.generate_import_file_name()
-        self.assertTrue(filename.startswith("Test Sheet-worksheet-42-"))
-        self.assertTrue(filename.endswith(".csv"))
+        with patch.object(DocTypeWorksheetMapping, "parent_doc", new_callable=PropertyMock, return_value=mock_parent):
+            mapping = DocTypeWorksheetMapping.__new__(DocTypeWorksheetMapping)
+            mapping.worksheet_id = 42
+
+            filename = mapping.generate_import_file_name()
+            self.assertTrue(filename.startswith("Test Sheet-worksheet-42-"))
+            self.assertTrue(filename.endswith(".csv"))
 
 
 class TestCreateDataImport(FrappeTestCase):
     """Tests for create_data_import() document creation."""
+
+    def setUp(self):
+        super().setUp()
+        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+            DocTypeWorksheetMapping,
+        )
+
+        self._mock_parent = MagicMock()
+        self._mock_parent.sheet_name = "Test Sheet"
+        self._mock_parent.name = "test-spreadsheet-001"
+        self._parent_doc_patcher = patch.object(
+            DocTypeWorksheetMapping, "parent_doc", new_callable=PropertyMock, return_value=self._mock_parent
+        )
+        self._parent_doc_patcher.start()
+
+    def tearDown(self):
+        self._parent_doc_patcher.stop()
+        super().tearDown()
 
     def _make_mapping(self):
         from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
@@ -248,11 +280,6 @@ class TestCreateDataImport(FrappeTestCase):
         mapping.submit_after_import = 0
         mapping.worksheet_id = 0
         mapping.name = "test-mapping-001"
-
-        mock_parent = MagicMock()
-        mock_parent.sheet_name = "Test Sheet"
-        mock_parent.name = "test-spreadsheet-001"
-        mapping.parent_doc = mock_parent
 
         return mapping
 
@@ -295,6 +322,24 @@ class TestCreateDataImport(FrappeTestCase):
 class TestTriggerInsertWorksheetImport(FrappeTestCase):
     """Tests for trigger_insert_worksheet_import() logic."""
 
+    def setUp(self):
+        super().setUp()
+        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+            DocTypeWorksheetMapping,
+        )
+
+        self._mock_parent = MagicMock()
+        self._mock_parent.sheet_name = "Test Sheet"
+        self._mock_parent.name = "test-spreadsheet-insert"
+        self._parent_doc_patcher = patch.object(
+            DocTypeWorksheetMapping, "parent_doc", new_callable=PropertyMock, return_value=self._mock_parent
+        )
+        self._parent_doc_patcher.start()
+
+    def tearDown(self):
+        self._parent_doc_patcher.stop()
+        super().tearDown()
+
     def _make_mapping(self):
         from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
@@ -312,12 +357,8 @@ class TestTriggerInsertWorksheetImport(FrappeTestCase):
         mapping.flags = frappe._dict()
         mapping.docstatus = 0
 
-        mock_parent = MagicMock()
-        mock_parent.sheet_name = "Test Sheet"
-        mock_parent.name = "test-spreadsheet-insert"
-        mapping.parent_doc = mock_parent
         mapping.parenttype = "SpreadSheet"
-        mapping.parent = mock_parent.name
+        mapping.parent = self._mock_parent.name
         mapping.parentfield = "worksheet_ids"
         mapping.idx = 1
 
@@ -403,19 +444,27 @@ class TestWorksheetIdField(FrappeTestCase):
         mock_parent.get_sheet_client().open_by_url().get_worksheet_by_id.return_value = (
             mock_worksheet
         )
-        mapping.parent_doc = mock_parent
 
-        return mapping
+        return mapping, mock_parent
 
     def test_returns_id_when_present(self):
-        mapping = self._make_mapping(["ID", "Name", "Email"])
-        self.assertEqual(mapping.worksheet_id_field, "ID")
+        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+            DocTypeWorksheetMapping,
+        )
+
+        mapping, mock_parent = self._make_mapping(["ID", "Name", "Email"])
+        with patch.object(DocTypeWorksheetMapping, "parent_doc", new_callable=PropertyMock, return_value=mock_parent):
+            self.assertEqual(mapping.worksheet_id_field, "ID")
 
     def test_throws_when_no_id_field_found(self):
-        # Use a doctype that has no unique fields matching the header
-        mapping = self._make_mapping(["RandomCol1", "RandomCol2"])
-        with self.assertRaises(frappe.exceptions.ValidationError):
-            _ = mapping.worksheet_id_field
+        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+            DocTypeWorksheetMapping,
+        )
+
+        mapping, mock_parent = self._make_mapping(["RandomCol1", "RandomCol2"])
+        with patch.object(DocTypeWorksheetMapping, "parent_doc", new_callable=PropertyMock, return_value=mock_parent):
+            with self.assertRaises(frappe.exceptions.ValidationError):
+                _ = mapping.worksheet_id_field
 
 
 class TestMappedDoctypeValidation(FrappeTestCase):
