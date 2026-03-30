@@ -5,11 +5,13 @@
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
- "field_order": [
+  "field_order": [
   "mapped_doctype",
   "reset_worksheet_on_import",
   "column_break_xr4k",
   "worksheet_id",
+  "section_break_export",
+  "export_filters",
   "section_break_v7u6",
   "last_import",
   "last_update_import",
@@ -18,7 +20,9 @@
   "mute_emails",
   "column_break_57ew",
   "counter",
-  "import_type"
+  "import_type",
+  "section_break_logs",
+  "sync_error_log"
  ],
  "fields": [
   {
@@ -35,6 +39,17 @@
    "in_preview": 1,
    "label": "Mapped DocType",
    "options": "DocType"
+  },
+  {
+    "fieldname": "section_break_export",
+    "fieldtype": "Section Break",
+    "label": "Export Settings"
+  },
+  {
+    "fieldname": "export_filters",
+    "fieldtype": "Small Text",
+    "label": "Export Filters (JSON)",
+    "description": "e.g. {\"status\": \"Active\", \"territory\": \"Islamabad\"}"
   },
   {
    "default": "1",
@@ -105,6 +120,17 @@
    "fieldname": "submit_after_import",
    "fieldtype": "Check",
    "label": "Submit After Import"
+  },
+  {
+    "fieldname": "section_break_logs",
+    "fieldtype": "Section Break",
+    "label": "Sync Logs"
+  },
+  {
+    "fieldname": "sync_error_log",
+    "fieldtype": "Small Text",
+    "label": "Sync Error Log",
+    "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,

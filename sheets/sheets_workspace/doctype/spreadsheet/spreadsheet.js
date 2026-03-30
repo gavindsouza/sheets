@@ -77,9 +77,26 @@ frappe.ui.form.on("SpreadSheet", {
             }
         });
 
+
         frm.add_custom_button("Trigger Import", () => {
             frm.call("trigger_import");
         });
+
+        if (frm.doc.sheet_name === "Customer") {
+            frm.add_custom_button("Trigger Export", () => {
+                frappe.call({
+                    method: "sheets.api.export_customers_to_sheets",
+                    args: {
+                        sheet_url: frm.doc.sheet_url
+                    },
+                    callback: (r) => {
+                        if (r.message) {
+                            frappe.msgprint(r.message);
+                        }
+                    }
+                });
+            });
+        }
     },
 });
 

@@ -13,4 +13,14 @@ has_permission = {
     "File": "sheets.overrides.has_permission",
 }
 
-doc_events = {}
+doc_events = {
+    "*": {
+        "on_update": "sheets.api.export_to_sheets"
+    }
+}
+
+scheduler_events = {
+    "hourly": [
+        "sheets.api.export_to_sheets"
+    ]
+}
