@@ -10,14 +10,14 @@ from croniter import croniter
 from frappe.model.document import Document
 from frappe.utils import get_link_to_form
 
-import sheets
-from sheets.api import describe_cron, get_all_frequency
-from sheets.overrides import update_record_patch
+import sheets_sync
+from sheets_sync.api import describe_cron, get_all_frequency
+from sheets_sync.overrides import update_record_patch
 
 if TYPE_CHECKING:
     from frappe.core.doctype.file import File
 
-    from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+    from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
         DocTypeWorksheetMapping,
     )
 
@@ -47,9 +47,9 @@ class SpreadSheet(Document):
             file: "File" = frappe.get_cached_doc(
                 "File",
                 {
-                    "attached_to_doctype": sheets.SHEETS_SETTINGS,
-                    "attached_to_name": sheets.SHEETS_SETTINGS,
-                    "attached_to_field": sheets.SHEETS_CREDENTIAL_FIELD,
+                    "attached_to_doctype": sheets_sync.SHEETS_SETTINGS,
+                    "attached_to_name": sheets_sync.SHEETS_SETTINGS,
+                    "attached_to_field": sheets_sync.SHEETS_CREDENTIAL_FIELD,
                 },
             )
             self._gc = gs.service_account(file.get_full_path())

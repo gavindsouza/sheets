@@ -11,7 +11,7 @@ on:
     - cron: '0 0 * * 5'  # Run every Friday at midnight UTC
 
 concurrency:
-  group: main-sheets-${{ github.event.number }}
+  group: main-sheets_sync-${{ github.event.number }}
   cancel-in-progress: true
 
 jobs:
@@ -105,10 +105,10 @@ jobs:
       - name: Install
         working-directory: /home/runner/frappe-bench
         run: |
-          bench get-app sheets $GITHUB_WORKSPACE
+          bench get-app sheets_sync $GITHUB_WORKSPACE
           bench setup requirements --dev
           bench new-site --db-root-password root --admin-password admin test_site.localhost
-          bench --site test_site.localhost install-app sheets
+          bench --site test_site.localhost install-app sheets_sync
           bench build
         env:
           CI: 'Yes'
@@ -119,6 +119,6 @@ jobs:
         run: |
           cd sites && ../env/bin/gunicorn -b 127.0.0.1:8000 -w 4 -t 120 frappe.app:application --preload &
           bench --site test_site.localhost set-config allow_tests true
-          bench --site test_site.localhost run-tests --app sheets
+          bench --site test_site.localhost run-tests --app sheets_sync
         env:
           TYPE: server

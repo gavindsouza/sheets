@@ -15,8 +15,8 @@ from unittest.mock import MagicMock, PropertyMock, patch
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from sheets.constants import INSERT, UPDATE, UPSERT
-from sheets.tests.test_helpers import (
+from sheets_sync.constants import INSERT, UPDATE, UPSERT
+from sheets_sync.tests.test_helpers import (
     SAMPLE_TODO_DATA,
     SAMPLE_TODO_DATA_WITH_ID,
     SAMPLE_TODO_UPDATES,
@@ -37,7 +37,7 @@ from sheets.tests.test_helpers import (
     restore_allow_import,
 )
 
-MODULE_PATH = "sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping"
+MODULE_PATH = "sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping"
 
 
 class TestInsertImportPipeline(FrappeTestCase):
@@ -683,7 +683,7 @@ class TestWorksheetIdFieldDetection(FrappeTestCase):
 
     def test_detects_id_column(self):
         """Finds 'ID' when present in header row."""
-        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
         )
 
@@ -702,7 +702,7 @@ class TestWorksheetIdFieldDetection(FrappeTestCase):
 
     def test_raises_when_no_id_field(self):
         """Raises ValidationError when no ID or unique field found."""
-        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
         )
 
@@ -810,7 +810,7 @@ class TestImporterPatch(FrappeTestCase):
         """patch_importer() applies the patch and restores the original."""
         from frappe.core.doctype.data_import.importer import Importer
 
-        from sheets.sheets_workspace.doctype.spreadsheet.spreadsheet import patch_importer
+        from sheets_sync.sheets_sync.doctype.spreadsheet.spreadsheet import patch_importer
 
         original_method = Importer.update_record
         self.assertFalse(hasattr(Importer, "patched"))
@@ -826,7 +826,7 @@ class TestImporterPatch(FrappeTestCase):
         """patch_importer() restores original even if an exception occurs."""
         from frappe.core.doctype.data_import.importer import Importer
 
-        from sheets.sheets_workspace.doctype.spreadsheet.spreadsheet import patch_importer
+        from sheets_sync.sheets_sync.doctype.spreadsheet.spreadsheet import patch_importer
 
         original_method = Importer.update_record
 
@@ -844,14 +844,14 @@ class TestSchedulerIntegration(FrappeTestCase):
 
     def test_cron_map_has_expected_frequencies(self):
         """CRON_MAP contains all standard frequencies."""
-        from sheets.api import CRON_MAP
+        from sheets_sync.api import CRON_MAP
 
         expected = {"Yearly", "Monthly", "Weekly", "Daily", "Hourly"}
         self.assertEqual(set(CRON_MAP.keys()), expected)
 
     def test_describe_cron_returns_string(self):
         """describe_cron() returns a human-readable description."""
-        from sheets.api import describe_cron
+        from sheets_sync.api import describe_cron
 
         result = describe_cron("0 0 * * *")
         self.assertIsInstance(result, str)
@@ -859,14 +859,14 @@ class TestSchedulerIntegration(FrappeTestCase):
 
     def test_describe_cron_with_frequency_name(self):
         """describe_cron() accepts frequency names from CRON_MAP."""
-        from sheets.api import describe_cron
+        from sheets_sync.api import describe_cron
 
         result = describe_cron("Daily")
         self.assertIsInstance(result, str)
 
     def test_get_all_frequency_returns_int(self):
         """get_all_frequency() returns scheduler interval in minutes."""
-        from sheets.api import get_all_frequency
+        from sheets_sync.api import get_all_frequency
 
         result = get_all_frequency()
         self.assertIsInstance(result, int)

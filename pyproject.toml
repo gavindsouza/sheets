@@ -1,5 +1,5 @@
 [project]
-name = "sheets"
+name = "sheets_sync"
 authors = [
     { name = "Gavin D'souza", email = "gavin18d@gmail.com"}
 ]

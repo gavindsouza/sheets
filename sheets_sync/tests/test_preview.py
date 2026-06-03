@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from sheets.tests.test_helpers import (
+from sheets_sync.tests.test_helpers import (
     make_mock_gspread_client,
     make_mock_spreadsheet,
     make_mock_worksheet,

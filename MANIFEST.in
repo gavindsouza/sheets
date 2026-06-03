@@ -4,15 +4,15 @@ include *.json
 include *.md
 include *.py
 include *.txt
-recursive-include sheets *.css
-recursive-include sheets *.csv
-recursive-include sheets *.html
-recursive-include sheets *.ico
-recursive-include sheets *.js
-recursive-include sheets *.json
-recursive-include sheets *.md
-recursive-include sheets *.png
-recursive-include sheets *.py
-recursive-include sheets *.svg
-recursive-include sheets *.txt
-recursive-exclude sheets *.pyc
+recursive-include sheets_sync *.css
+recursive-include sheets_sync *.csv
+recursive-include sheets_sync *.html
+recursive-include sheets_sync *.ico
+recursive-include sheets_sync *.js
+recursive-include sheets_sync *.json
+recursive-include sheets_sync *.md
+recursive-include sheets_sync *.png
+recursive-include sheets_sync *.py
+recursive-include sheets_sync *.svg
+recursive-include sheets_sync *.txt
+recursive-exclude sheets_sync *.pyc

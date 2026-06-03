@@ -12,7 +12,7 @@ frappe.ui.form.on("SpreadSheet", {
     onload(frm) {
         !gsc.all_frequency &&
             frappe.call({
-                method: "sheets.api.get_all_frequency",
+                method: "sheets_sync.api.get_all_frequency",
                 type: "GET",
                 callback: ({ message }) => {
                     gsc.all_frequency = message;
@@ -30,7 +30,7 @@ frappe.ui.form.on("SpreadSheet", {
         } else if (frm.doc.import_frequency === "Custom") {
             if (frm.doc.frequency_cron?.trim().split(" ").length >= 5) {
                 frappe.call({
-                    method: "sheets.api.describe_cron",
+                    method: "sheets_sync.api.describe_cron",
                     args: { cron: frm.doc.frequency_cron },
                     type: "GET",
                     callback: ({ message }) => {
@@ -42,7 +42,7 @@ frappe.ui.form.on("SpreadSheet", {
             }
         } else {
             frappe.call({
-                method: "sheets.api.describe_cron",
+                method: "sheets_sync.api.describe_cron",
                 args: { cron: frm.doc.import_frequency },
                 type: "GET",
                 callback: ({ message }) => {
