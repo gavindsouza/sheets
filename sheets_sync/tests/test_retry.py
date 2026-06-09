@@ -12,8 +12,8 @@ from unittest.mock import MagicMock, PropertyMock, call, patch
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from sheets.constants import INSERT
-from sheets.tests.test_helpers import (
+from sheets_sync.constants import INSERT
+from sheets_sync.tests.test_helpers import (
     cleanup_data_import,
     ensure_allow_import,
     make_csv,
@@ -250,7 +250,7 @@ class TestPatchImporterSafety(FrappeTestCase):
         """patch_importer() restores original method even on exception."""
         from frappe.core.doctype.data_import.importer import Importer
 
-        from sheets.sheets_workspace.doctype.spreadsheet.spreadsheet import patch_importer
+        from sheets_sync.sheets_sync.doctype.spreadsheet.spreadsheet import patch_importer
 
         original_method = Importer.update_record
 

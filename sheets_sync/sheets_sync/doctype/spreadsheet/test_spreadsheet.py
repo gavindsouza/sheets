@@ -11,7 +11,7 @@ from frappe.tests.utils import FrappeTestCase
 from frappe.utils import get_site_url
 from requests import get
 
-from sheets.sheets_workspace.doctype.spreadsheet.spreadsheet import patch_importer
+from sheets_sync.sheets_sync.doctype.spreadsheet.spreadsheet import patch_importer
 
 
 def whitelist_for_ci(fn):

@@ -14,7 +14,7 @@ from frappe.core.doctype.data_import.importer import get_autoname_field
 from frappe.model.document import Document
 from frappe.utils import get_link_to_form
 
-from sheets.constants import INSERT, UPDATE, UPSERT
+from sheets_sync.constants import INSERT, UPDATE, UPSERT
 
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503}
 MAX_RETRIES = 3

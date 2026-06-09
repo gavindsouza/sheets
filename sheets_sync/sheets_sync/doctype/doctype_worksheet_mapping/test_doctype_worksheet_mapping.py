@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from sheets.constants import INSERT, UPDATE, UPSERT
+from sheets_sync.constants import INSERT, UPDATE, UPSERT
 
 
 def make_csv(*rows):
@@ -24,7 +24,7 @@ class TestGetImportType(FrappeTestCase):
     """Tests for DocTypeWorksheetMapping.get_import_type()."""
 
     def _make_mapping(self, import_type):
-        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
         )
 
@@ -55,7 +55,7 @@ class TestTriggerWorksheetImport(FrappeTestCase):
     """Tests for DocTypeWorksheetMapping.trigger_worksheet_import() routing."""
 
     def _make_mapping(self, import_type):
-        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
         )
 
@@ -65,7 +65,7 @@ class TestTriggerWorksheetImport(FrappeTestCase):
         return mapping
 
     @patch(
-        "sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping.DocTypeWorksheetMapping.trigger_insert_worksheet_import"
+        "sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping.DocTypeWorksheetMapping.trigger_insert_worksheet_import"
     )
     def test_routes_insert(self, mock_insert):
         mapping = self._make_mapping("Insert")
@@ -73,7 +73,7 @@ class TestTriggerWorksheetImport(FrappeTestCase):
         mock_insert.assert_called_once()
 
     @patch(
-        "sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping.DocTypeWorksheetMapping.trigger_upsert_worksheet_import"
+        "sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping.DocTypeWorksheetMapping.trigger_upsert_worksheet_import"
     )
     def test_routes_upsert(self, mock_upsert):
         mapping = self._make_mapping("Upsert")
@@ -90,7 +90,7 @@ class TestFetchRemoteSpreadsheet(FrappeTestCase):
     """Tests for fetch_remote_spreadsheet() counter/slicing logic."""
 
     def _make_mapping(self):
-        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
         )
 
@@ -158,7 +158,7 @@ class TestFetchRemoteWorksheet(FrappeTestCase):
 
     def setUp(self):
         super().setUp()
-        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
         )
 
@@ -173,7 +173,7 @@ class TestFetchRemoteWorksheet(FrappeTestCase):
         super().tearDown()
 
     def _make_mapping(self, worksheet_id=0):
-        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
         )
 
@@ -232,7 +232,7 @@ class TestGenerateImportFileName(FrappeTestCase):
     """Tests for generate_import_file_name()."""
 
     def test_filename_format(self):
-        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
         )
 
@@ -253,7 +253,7 @@ class TestCreateDataImport(FrappeTestCase):
 
     def setUp(self):
         super().setUp()
-        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
         )
 
@@ -279,7 +279,7 @@ class TestCreateDataImport(FrappeTestCase):
         super().tearDown()
 
     def _make_mapping(self):
-        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
         )
 
@@ -333,7 +333,7 @@ class TestTriggerInsertWorksheetImport(FrappeTestCase):
 
     def setUp(self):
         super().setUp()
-        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
         )
 
@@ -359,7 +359,7 @@ class TestTriggerInsertWorksheetImport(FrappeTestCase):
         super().tearDown()
 
     def _make_mapping(self):
-        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
         )
 
@@ -383,7 +383,7 @@ class TestTriggerInsertWorksheetImport(FrappeTestCase):
         return mapping
 
     @patch(
-        "sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping.DocTypeWorksheetMapping.fetch_remote_spreadsheet"
+        "sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping.DocTypeWorksheetMapping.fetch_remote_spreadsheet"
     )
     @patch("frappe.enqueue_doc")
     def test_insert_creates_data_import_and_updates_counter(self, mock_enqueue, mock_fetch):
@@ -409,7 +409,7 @@ class TestTriggerInsertWorksheetImport(FrappeTestCase):
             frappe.delete_doc("Data Import", mapping.last_import, force=True)
 
     @patch(
-        "sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping.DocTypeWorksheetMapping.fetch_remote_spreadsheet"
+        "sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping.DocTypeWorksheetMapping.fetch_remote_spreadsheet"
     )
     def test_insert_skips_when_no_data(self, mock_fetch):
         mapping = self._make_mapping()
@@ -448,7 +448,7 @@ class TestWorksheetIdField(FrappeTestCase):
     """Tests for worksheet_id_field cached property."""
 
     def _make_mapping(self, header_row, mapped_doctype="ToDo"):
-        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
         )
 
@@ -467,7 +467,7 @@ class TestWorksheetIdField(FrappeTestCase):
         return mapping, mock_parent
 
     def test_returns_id_when_present(self):
-        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
         )
 
@@ -476,7 +476,7 @@ class TestWorksheetIdField(FrappeTestCase):
             self.assertEqual(mapping.worksheet_id_field, "ID")
 
     def test_throws_when_no_id_field_found(self):
-        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
         )
 
@@ -490,7 +490,7 @@ class TestMappedDoctypeValidation(FrappeTestCase):
     """Tests for mapped_doctype validation on import trigger."""
 
     def test_throws_when_mapped_doctype_empty(self):
-        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
         )
 
@@ -502,7 +502,7 @@ class TestMappedDoctypeValidation(FrappeTestCase):
             mapping.trigger_worksheet_import()
 
     def test_throws_when_mapped_doctype_none(self):
-        from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
             DocTypeWorksheetMapping,
         )
 

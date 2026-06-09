@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 import frappe
 
-from sheets.constants import INSERT, UPDATE
+from sheets_sync.constants import INSERT, UPDATE
 
 
 # ---------------------------------------------------------------------------
@@ -158,7 +158,7 @@ def make_worksheet_mapping(
 
     Returns (mapping, mock_parent) tuple.
     """
-    from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+    from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
         DocTypeWorksheetMapping,
     )
 
@@ -251,7 +251,7 @@ def patch_parent_doc(mock_parent):
         with patch_parent_doc(mock_parent):
             mapping.do_something()
     """
-    from sheets.sheets_workspace.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
+    from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
         DocTypeWorksheetMapping,
     )
 
