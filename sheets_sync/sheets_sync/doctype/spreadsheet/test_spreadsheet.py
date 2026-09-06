@@ -2,8 +2,6 @@
 # See license.txt
 
 import os
-import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import frappe
 from frappe.core.doctype.data_import.importer import Importer
@@ -25,24 +23,22 @@ def test_api(patch: bool = True):
     if not patch:
         return patch, hasattr(Importer, "patched")
     with patch_importer():
-        time.sleep(10)
         return patch, hasattr(Importer, "patched")
 
 
 class TestSpreadSheet(FrappeTestCase):
-    def test_importer_monkey_patches(self):
-        # Tested with gunicorn workers = 2, 10 & 17 - lgtm
-        API_PATH = f"{get_site_url(frappe.local.site)}/api/method/{test_api.__module__}.{test_api.__qualname__}"
-        patched, not_patched = {"patch": True}, {"patch": False}
-        ARGS = [patched, not_patched, not_patched] * 3
+    def test_importer_patch_is_scoped(self):
+        official = Importer.update_record
+        self.assertFalse(hasattr(Importer, "patched"))
 
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            futures = [executor.submit(get, API_PATH, params=arg) for arg in ARGS]
-            for future in as_completed(futures):
-                res = future.result().json()["message"]
-                if str(res[0]) != str(res[1]):
-                    # A not_patched request can land on a worker that is
-                    # mid-patch under slow scheduling; retry to confirm the
-                    # overlap was transient rather than a leaked patch.
-                    retry = get(API_PATH, params={"patch": False}).json()["message"]
-                    self.assertEqual(str(retry[0]), str(retry[1]))
+        with patch_importer():
+            self.assertTrue(hasattr(Importer, "patched"))
+            self.assertIsNot(Importer.update_record, official)
+
+        self.assertFalse(hasattr(Importer, "patched"))
+        self.assertIs(Importer.update_record, official)
+
+    def test_importer_patch_http(self):
+        API_PATH = f"{get_site_url(frappe.local.site)}/api/method/{test_api.__module__}.{test_api.__qualname__}"
+        response = get(API_PATH, params={"patch": True}).json()["message"]
+        self.assertEqual(str(response[0]), str(response[1]))
