@@ -32,15 +32,13 @@ class SpreadSheet(Document):
 
     @property
     def frequency_description(self):
-        match self.import_frequency:
-            case None | "":
-                return
-            case "Custom":
-                return describe_cron(self.frequency_cron)
-            case "Frequently":
-                return describe_cron(f"0/{get_all_frequency()} * * * *")
-            case _:
-                return describe_cron(self.import_frequency)
+        if not self.import_frequency:
+            return
+        if self.import_frequency == "Custom":
+            return describe_cron(self.frequency_cron)
+        if self.import_frequency == "Frequently":
+            return describe_cron(f"0/{get_all_frequency()} * * * *")
+        return describe_cron(self.import_frequency)
 
     def get_sheet_client(self):
         if not hasattr(self, "_gc"):

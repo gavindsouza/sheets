@@ -7,7 +7,7 @@ from csv import writer as csv_writer
 from difflib import SequenceMatcher
 from functools import cached_property
 from io import StringIO
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import frappe
 from frappe.core.doctype.data_import.importer import get_autoname_field
@@ -51,7 +51,7 @@ class DocTypeWorksheetMapping(Document):
             order_by="creation",
         )
 
-    def get_import_file_content(self, import_file_url: str) -> str | None:
+    def get_import_file_content(self, import_file_url: str) -> Optional[str]:
         """Read the CSV content attached to a past Data Import.
 
         Returns None (with a warning) when the file can't be found instead of
@@ -207,13 +207,11 @@ class DocTypeWorksheetMapping(Document):
         return self.save()
 
     def get_import_type(self):
-        match self.import_type:
-            case "Insert":
-                return INSERT
-            case "Upsert":
-                return UPSERT
-            case _:
-                raise ValueError(f"Invalid import type: {self.import_type}")
+        if self.import_type == "Insert":
+            return INSERT
+        if self.import_type == "Upsert":
+            return UPSERT
+        raise ValueError(f"Invalid import type: {self.import_type}")
 
     def generate_import_file_name(self):
         return f"{self.parent_doc.sheet_name}-worksheet-{self.worksheet_id}-{frappe.generate_hash(length=6)}.csv"
