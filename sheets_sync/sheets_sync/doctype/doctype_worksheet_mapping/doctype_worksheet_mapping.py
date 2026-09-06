@@ -51,6 +51,34 @@ class DocTypeWorksheetMapping(Document):
             order_by="creation",
         )
 
+    def get_import_file_content(self, import_file_url: str) -> str | None:
+        """Read the CSV content attached to a past Data Import.
+
+        Returns None (with a warning) when the file can't be found instead of
+        raising, so UPSERT can degrade gracefully.
+        """
+        if not import_file_url:
+            return None
+
+        file_doc = frappe.get_doc("File", {"file_url": import_file_url})
+        if not file_doc.name:
+            frappe.msgprint(
+                f"Import file for {self.name} no longer exists ({import_file_url}). "
+                "Skipping it for the UPSERT comparison.",
+                alert=True,
+                indicator="orange",
+            )
+            return None
+
+        return file_doc.get_content()
+
+    def iter_import_file_contents(self, data_imports):
+        """Yield CSV content for past Data Imports, skipping missing files."""
+        for data_import in data_imports:
+            content = self.get_import_file_content(data_import.import_file)
+            if content is not None:
+                yield content
+
     def trigger_upsert_worksheet_import(self):
         successful_insert_imports = self.fetch_past_successful_imports(import_type=INSERT)
 
@@ -63,15 +91,9 @@ class DocTypeWorksheetMapping(Document):
             return self.trigger_insert_worksheet_import()
 
         successful_update_imports = self.fetch_past_successful_imports(import_type=UPDATE)
-        update_csv_geneator = (
-            frappe.get_doc(doctype="File", file_url=x.import_file, file_name="").get_content()
-            for x in successful_update_imports
-        )
+        update_csv_generator = self.iter_import_file_contents(successful_update_imports)
 
-        insert_csv_generator = (
-            frappe.get_doc(doctype="File", file_url=x.import_file, file_name="").get_content()
-            for x in successful_insert_imports
-        )
+        insert_csv_generator = self.iter_import_file_contents(successful_insert_imports)
 
         # 1. generate csv file with all the inserted data imported
         data_imported_csv_file = []
@@ -102,7 +124,7 @@ class DocTypeWorksheetMapping(Document):
         id_field_imported_index = data_imported_csv_file_header.index(id_field)
 
         # 2. apply updates captured over the csv file
-        for csv_file in update_csv_geneator:
+        for csv_file in update_csv_generator:
             update_csv_reader = csv_reader(StringIO(csv_file))
 
             header_row = next(update_csv_reader)
