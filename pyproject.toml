@@ -4,7 +4,7 @@ authors = [
     { name = "Gavin D'souza", email = "gavin18d@gmail.com"}
 ]
 description = "Sync data from Remote Sheets to your DocTypes"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
@@ -24,7 +24,10 @@ build-backend = "flit_core.buildapi"
 
 [tool.ruff]
 line-length = 99
-target-version = "py310"
+target-version = "py39"
+
+[tool.bench.frappe-dependencies]
+frappe = ">=13.0.0,<17.0.0"
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B"]
