@@ -1,39 +1,39 @@
-
 name: CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [main, develop]
   pull_request:
-  workflow_dispatch:
+    branches: [main, develop]
   schedule:
-    - cron: '0 0 * * 5'  # Run every Friday at midnight UTC
+    - cron: "0 0 * * 5"
+  workflow_dispatch:
 
 concurrency:
-  group: main-sheets_sync-${{ github.event.number }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  tests:
+  test:
     runs-on: ubuntu-latest
+
     strategy:
       fail-fast: false
       matrix:
-        frappe_version: [version-15, version-16, develop]
         include:
-          - frappe_version: version-15
-            python_version: '3.11'
-            node_version: 18
-          - frappe_version: version-16
-            python_version: '3.14'
-            node_version: 24
-          - frappe_version: develop
-            python_version: '3.14'
-            node_version: 24
-    name: Server (Frappe ${{ matrix.frappe_version }})
+          - {version: "15", python-version: "3.11", node-version: "18", frappe-branch: "version-15"}
+          - {version: "16", python-version: "3.12", node-version: "20", frappe-branch: "version-16"}
+          - {version: "develop", python-version: "3.13", node-version: "22", frappe-branch: "develop"}
 
     services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=2s --health-retries=3
+
       redis-cache:
         image: redis:alpine
         ports:
@@ -42,83 +42,48 @@ jobs:
         image: redis:alpine
         ports:
           - 11000:6379
-      redis-socketio:
-        image: redis:alpine
-        ports:
-          - 12000:6379
-      mariadb:
-        image: mariadb:11.8
-        env:
-          MYSQL_ROOT_PASSWORD: root
-        ports:
-          - 3306:3306
-        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=5s --health-timeout=2s --health-retries=3
 
     steps:
-      - name: Clone
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python_version }}
+          python-version: ${{ matrix.python-version }}
 
-      - name: Setup Node
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node_version }}
-          check-latest: true
+          node-version: ${{ matrix.node-version }}
 
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/*requirements.txt', '**/pyproject.toml', '**/setup.py', '**/setup.cfg') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+      - name: Install Frappe bench
+        run: pip install frappe-bench
 
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: 'echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT'
-
-      - uses: actions/cache@v4
-        id: yarn-cache
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-
-      - name: Setup
-        run: |
-          pip install frappe-bench
-          bench init --skip-redis-config-generation --skip-assets --frappe-branch ${{ matrix.frappe_version }} --python "$(which python)" ~/frappe-bench
-          if [ "${{ matrix.frappe_version }}" = "version-15" ]; then
-            ~/frappe-bench/env/bin/pip install "setuptools<81"
-          fi
-          mysql --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'"
-          mysql --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
+      - name: Initialize bench
         env:
           BENCH_USE_UV: 'true'
-
-      - name: Install
-        working-directory: /home/runner/frappe-bench
         run: |
-          bench get-app sheets_sync $GITHUB_WORKSPACE
-          bench setup requirements --dev
-          bench new-site --db-root-password root --admin-password admin test_site.localhost
-          bench --site test_site.localhost install-app sheets_sync
-          bench build
+          bench init --skip-redis-config-generation --skip-assets frappe-bench --frappe-branch ${{ matrix.frappe-branch }}
+          if [ "${{ matrix.version }}" = "15" ]; then
+            frappe-bench/env/bin/pip install "setuptools<81"
+          fi
+          cd frappe-bench
+          bench get-app ${{ github.workspace }}
+
+      - name: Create test site
+        working-directory: frappe-bench
         env:
           CI: 'Yes'
-          BENCH_USE_UV: 'true'
+        run: |
+          bench setup requirements --dev
+          bench new-site --mariadb-root-password root --admin-password admin test.localhost
+          bench --site test.localhost install-app sheets_sync
 
-      - name: Run Tests
-        working-directory: /home/runner/frappe-bench
+      - name: Run tests
+        working-directory: frappe-bench
+        env:
+          CI: 'Yes'
         run: |
           cd sites && ../env/bin/gunicorn -b 127.0.0.1:8000 -w 4 -t 120 frappe.app:application --preload &
-          bench --site test_site.localhost set-config allow_tests true
-          bench --site test_site.localhost run-tests --app sheets_sync
-        env:
-          TYPE: server
+          cd ..
+          bench --site test.localhost run-tests --app sheets_sync
