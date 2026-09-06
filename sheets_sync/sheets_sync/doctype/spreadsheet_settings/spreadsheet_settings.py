@@ -4,5 +4,4 @@
 from frappe.model.document import Document
 
 
-class SpreadSheetSettings(Document):
-    ...
+class SpreadSheetSettings(Document): ...

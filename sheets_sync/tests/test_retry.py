@@ -6,23 +6,15 @@
 Tests written FIRST (red), then implementation to make them pass (green).
 """
 
-import time
-from unittest.mock import MagicMock, PropertyMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
-from sheets_sync.constants import INSERT
 from sheets_sync.tests.test_helpers import (
-    cleanup_data_import,
-    ensure_allow_import,
-    make_csv,
-    make_mock_gspread_client,
-    make_mock_spreadsheet,
     make_mock_worksheet,
     make_worksheet_mapping,
     patch_parent_doc,
-    restore_allow_import,
 )
 
 
@@ -129,7 +121,7 @@ class TestApiRetry(FrappeTestCase):
         mock_parent.sheet_url = "https://docs.google.com/spreadsheets/d/test123"
 
         with patch_parent_doc(mock_parent):
-            with self.assertRaises(Exception):
+            with self.assertRaises(frappe.exceptions.ValidationError):
                 mapping.fetch_remote_worksheet()
 
         # Should only try once (no retry)
@@ -155,7 +147,7 @@ class TestApiRetry(FrappeTestCase):
         mock_parent.sheet_url = "https://docs.google.com/spreadsheets/d/test123"
 
         with patch_parent_doc(mock_parent):
-            with self.assertRaises(Exception):
+            with self.assertRaises(frappe.exceptions.ValidationError):
                 mapping.fetch_remote_worksheet()
 
         self.assertEqual(mock_ss.get_worksheet_by_id.call_count, 1)
@@ -181,7 +173,7 @@ class TestApiRetry(FrappeTestCase):
 
         with patch_parent_doc(mock_parent):
             with patch("time.sleep"):
-                with self.assertRaises(Exception):
+                with self.assertRaises(frappe.exceptions.ValidationError):
                     mapping.fetch_remote_worksheet()
 
         # 1 initial + 3 retries = 4 total attempts
@@ -208,7 +200,7 @@ class TestApiRetry(FrappeTestCase):
 
         with patch_parent_doc(mock_parent):
             with patch("time.sleep") as mock_sleep:
-                with self.assertRaises(Exception):
+                with self.assertRaises(frappe.exceptions.ValidationError):
                     mapping.fetch_remote_worksheet()
 
         # Should sleep with exponential backoff: 1, 2, 4

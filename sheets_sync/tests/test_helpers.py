@@ -17,9 +17,6 @@ from unittest.mock import MagicMock, PropertyMock, patch
 
 import frappe
 
-from sheets_sync.constants import INSERT, UPDATE
-
-
 # ---------------------------------------------------------------------------
 # CSV helpers
 # ---------------------------------------------------------------------------
@@ -114,7 +111,9 @@ def make_mock_gspread_client(spreadsheet=None):
 
     mock_client = MagicMock()
     mock_client.open_by_url.return_value = spreadsheet
-    mock_client.http_client.auth.service_account_email = "test@test-project.iam.gserviceaccount.com"
+    mock_client.http_client.auth.service_account_email = (
+        "test@test-project.iam.gserviceaccount.com"
+    )
     return mock_client
 
 

@@ -6,9 +6,6 @@
 Tests written FIRST (red), then implementation to make them pass (green).
 """
 
-from unittest.mock import MagicMock, PropertyMock, patch
-
-import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from sheets_sync.tests.test_helpers import (

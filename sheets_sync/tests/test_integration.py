@@ -8,24 +8,18 @@ with mocked external services (Google Sheets API) but real Frappe operations
 (database writes, Data Import document creation, file attachments).
 """
 
-from csv import reader as csv_reader
-from io import StringIO
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock, patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
 from sheets_sync.constants import INSERT, UPDATE, UPSERT
 from sheets_sync.tests.test_helpers import (
-    SAMPLE_TODO_DATA,
     SAMPLE_TODO_DATA_WITH_ID,
-    SAMPLE_TODO_UPDATES,
     cleanup_data_import,
     cleanup_todos,
-    count_data_rows,
     ensure_allow_import,
     get_import_file_content,
-    get_import_status,
     get_imported_rows,
     make_csv,
     make_mock_gspread_client,
@@ -125,10 +119,14 @@ class TestInsertImportPipeline(FrappeTestCase):
             ["Batch 2 item 2", "Open"],
         ]
 
-        self._created_todos.extend([
-            "Batch 1 item 1", "Batch 1 item 2",
-            "Batch 2 item 1", "Batch 2 item 2",
-        ])
+        self._created_todos.extend(
+            [
+                "Batch 1 item 1",
+                "Batch 1 item 2",
+                "Batch 2 item 1",
+                "Batch 2 item 2",
+            ]
+        )
 
         mock_ws = make_mock_worksheet(data=data_batch1)
         mock_ss = make_mock_spreadsheet(worksheets=[mock_ws])
@@ -305,23 +303,29 @@ class TestUpsertImportPipeline(FrappeTestCase):
         di.save()
 
         import_file = frappe.new_doc("File")
-        import_file.update({
-            "attached_to_doctype": "Data Import",
-            "attached_to_name": di.name,
-            "attached_to_field": "import_file",
-            "file_name": f"test-import-{frappe.generate_hash(length=6)}.csv",
-            "is_private": 1,
-        })
+        import_file.update(
+            {
+                "attached_to_doctype": "Data Import",
+                "attached_to_name": di.name,
+                "attached_to_field": "import_file",
+                "file_name": f"test-import-{frappe.generate_hash(length=6)}.csv",
+                "is_private": 1,
+            }
+        )
         import_file.content = csv_data.encode("utf-8")
         import_file.save()
 
         di.import_file = import_file.file_url
         # Use db_set to avoid link validation on fake parent references
-        frappe.db.set_value("Data Import", di.name, {
-            "import_file": import_file.file_url,
-            "spreadsheet_id": mock_parent.name,
-            "worksheet_id": mapping.name,
-        })
+        frappe.db.set_value(
+            "Data Import",
+            di.name,
+            {
+                "import_file": import_file.file_url,
+                "spreadsheet_id": mock_parent.name,
+                "worksheet_id": mapping.name,
+            },
+        )
         frappe.db.set_value("Data Import", di.name, "status", "Success")
 
         self._created_imports.append(di.name)
@@ -368,16 +372,14 @@ class TestUpsertImportPipeline(FrappeTestCase):
         remote_data = [
             ["ID", "Description", "Status"],
             ["TODO-001", "Buy groceries", "Closed"],  # status changed
-            ["TODO-002", "Walk the dog", "Open"],      # unchanged
+            ["TODO-002", "Walk the dog", "Open"],  # unchanged
         ]
 
         mock_ws = make_mock_worksheet(data=remote_data)
         mock_ss = make_mock_spreadsheet(worksheets=[mock_ws])
         mock_client = make_mock_gspread_client(spreadsheet=mock_ss)
 
-        mapping, mock_parent = make_worksheet_mapping(
-            import_type="Upsert", counter=3
-        )
+        mapping, mock_parent = make_worksheet_mapping(import_type="Upsert", counter=3)
         mock_parent.get_sheet_client.return_value = mock_client
         mock_parent.sheet_url = "https://docs.google.com/spreadsheets/d/test123"
 
@@ -394,9 +396,7 @@ class TestUpsertImportPipeline(FrappeTestCase):
             mock_ws_for_id.get_all_values.return_value = remote_data
 
             with patch.object(mapping, "save", return_value=mapping):
-                with patch(
-                    "frappe.core.doctype.data_import.data_import.DataImport.start_import"
-                ):
+                with patch("frappe.core.doctype.data_import.data_import.DataImport.start_import"):
                     mapping.trigger_upsert_worksheet_import()
 
         if mapping.last_update_import:
@@ -422,9 +422,7 @@ class TestUpsertImportPipeline(FrappeTestCase):
         mock_ss = make_mock_spreadsheet(worksheets=[mock_ws])
         mock_client = make_mock_gspread_client(spreadsheet=mock_ss)
 
-        mapping, mock_parent = make_worksheet_mapping(
-            import_type="Upsert", counter=2
-        )
+        mapping, mock_parent = make_worksheet_mapping(import_type="Upsert", counter=2)
         mock_parent.get_sheet_client.return_value = mock_client
         mock_parent.sheet_url = "https://docs.google.com/spreadsheets/d/test123"
 
@@ -683,9 +681,6 @@ class TestWorksheetIdFieldDetection(FrappeTestCase):
 
     def test_detects_id_column(self):
         """Finds 'ID' when present in header row."""
-        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
-            DocTypeWorksheetMapping,
-        )
 
         mock_ws = make_mock_worksheet(data=SAMPLE_TODO_DATA_WITH_ID)
         mock_ss = make_mock_spreadsheet(worksheets=[mock_ws])
@@ -702,9 +697,6 @@ class TestWorksheetIdFieldDetection(FrappeTestCase):
 
     def test_raises_when_no_id_field(self):
         """Raises ValidationError when no ID or unique field found."""
-        from sheets_sync.sheets_sync.doctype.doctype_worksheet_mapping.doctype_worksheet_mapping import (
-            DocTypeWorksheetMapping,
-        )
 
         data = [["RandomCol1", "RandomCol2"], ["val1", "val2"]]
         mock_ws = make_mock_worksheet(data=data)
@@ -748,7 +740,7 @@ class TestErrorScenarios(FrappeTestCase):
         mock_parent.sheet_url = "https://docs.google.com/spreadsheets/d/test123"
 
         with patch_parent_doc(mock_parent):
-            with self.assertRaises(Exception):
+            with self.assertRaises(frappe.exceptions.ValidationError):
                 mapping.fetch_remote_worksheet()
 
     def test_worksheet_not_found_error(self):
@@ -765,7 +757,7 @@ class TestErrorScenarios(FrappeTestCase):
         mock_parent.sheet_url = "https://docs.google.com/spreadsheets/d/test123"
 
         with patch_parent_doc(mock_parent):
-            with self.assertRaises(Exception):
+            with self.assertRaises(frappe.exceptions.ValidationError):
                 mapping.fetch_remote_worksheet()
 
     def test_insert_with_empty_csv(self):
@@ -798,7 +790,7 @@ class TestErrorScenarios(FrappeTestCase):
         self._created_imports.append(di.name)
         mapping.last_import = di.name
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(frappe.exceptions.ValidationError):
             with patch.object(mapping, "save", return_value=mapping):
                 mapping.trigger_insert_worksheet_import()
 
@@ -920,12 +912,16 @@ class TestMultiWorksheetImport(FrappeTestCase):
         mock_parent.sheet_url = "https://docs.google.com/spreadsheets/d/test123"
 
         mapping0, _ = make_worksheet_mapping(
-            worksheet_id=0, counter=1, mock_parent=mock_parent,
-            parent_name="test-multi-spreadsheet"
+            worksheet_id=0,
+            counter=1,
+            mock_parent=mock_parent,
+            parent_name="test-multi-spreadsheet",
         )
         mapping1, _ = make_worksheet_mapping(
-            worksheet_id=1, counter=1, mock_parent=mock_parent,
-            parent_name="test-multi-spreadsheet"
+            worksheet_id=1,
+            counter=1,
+            mock_parent=mock_parent,
+            parent_name="test-multi-spreadsheet",
         )
 
         with patch_parent_doc(mock_parent):

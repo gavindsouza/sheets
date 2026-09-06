@@ -164,7 +164,10 @@ class TestFetchRemoteWorksheet(FrappeTestCase):
 
         self._mock_parent = MagicMock()
         self._parent_doc_patcher = patch.object(
-            DocTypeWorksheetMapping, "parent_doc", new_callable=PropertyMock, return_value=self._mock_parent
+            DocTypeWorksheetMapping,
+            "parent_doc",
+            new_callable=PropertyMock,
+            return_value=self._mock_parent,
         )
         self._parent_doc_patcher.start()
 
@@ -239,7 +242,12 @@ class TestGenerateImportFileName(FrappeTestCase):
         mock_parent = MagicMock()
         mock_parent.sheet_name = "Test Sheet"
 
-        with patch.object(DocTypeWorksheetMapping, "parent_doc", new_callable=PropertyMock, return_value=mock_parent):
+        with patch.object(
+            DocTypeWorksheetMapping,
+            "parent_doc",
+            new_callable=PropertyMock,
+            return_value=mock_parent,
+        ):
             mapping = DocTypeWorksheetMapping.__new__(DocTypeWorksheetMapping)
             mapping.worksheet_id = 42
 
@@ -261,7 +269,10 @@ class TestCreateDataImport(FrappeTestCase):
         self._mock_parent.sheet_name = "Test Sheet"
         self._mock_parent.name = "test-spreadsheet-001"
         self._parent_doc_patcher = patch.object(
-            DocTypeWorksheetMapping, "parent_doc", new_callable=PropertyMock, return_value=self._mock_parent
+            DocTypeWorksheetMapping,
+            "parent_doc",
+            new_callable=PropertyMock,
+            return_value=self._mock_parent,
         )
         self._parent_doc_patcher.start()
 
@@ -341,7 +352,10 @@ class TestTriggerInsertWorksheetImport(FrappeTestCase):
         self._mock_parent.sheet_name = "Test Sheet"
         self._mock_parent.name = "test-spreadsheet-insert"
         self._parent_doc_patcher = patch.object(
-            DocTypeWorksheetMapping, "parent_doc", new_callable=PropertyMock, return_value=self._mock_parent
+            DocTypeWorksheetMapping,
+            "parent_doc",
+            new_callable=PropertyMock,
+            return_value=self._mock_parent,
         )
         self._parent_doc_patcher.start()
 
@@ -472,7 +486,12 @@ class TestWorksheetIdField(FrappeTestCase):
         )
 
         mapping, mock_parent = self._make_mapping(["ID", "Name", "Email"])
-        with patch.object(DocTypeWorksheetMapping, "parent_doc", new_callable=PropertyMock, return_value=mock_parent):
+        with patch.object(
+            DocTypeWorksheetMapping,
+            "parent_doc",
+            new_callable=PropertyMock,
+            return_value=mock_parent,
+        ):
             self.assertEqual(mapping.worksheet_id_field, "ID")
 
     def test_throws_when_no_id_field_found(self):
@@ -481,7 +500,12 @@ class TestWorksheetIdField(FrappeTestCase):
         )
 
         mapping, mock_parent = self._make_mapping(["RandomCol1", "RandomCol2"])
-        with patch.object(DocTypeWorksheetMapping, "parent_doc", new_callable=PropertyMock, return_value=mock_parent):
+        with patch.object(
+            DocTypeWorksheetMapping,
+            "parent_doc",
+            new_callable=PropertyMock,
+            return_value=mock_parent,
+        ):
             with self.assertRaises(frappe.exceptions.ValidationError):
                 _ = mapping.worksheet_id_field
 
