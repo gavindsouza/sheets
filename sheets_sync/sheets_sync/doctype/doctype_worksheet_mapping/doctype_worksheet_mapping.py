@@ -335,6 +335,17 @@ class DocTypeWorksheetMapping(Document):
         return full_sheet_content
 
     @cached_property
+    def parent_doc(self):
+        """Resolve the owning spreadsheet document.
+
+        Frappe >=15 exposes this on Document; provide the same behavior for
+        benches running 13/14 so callers work across supported versions.
+        """
+        if self.parent:
+            return frappe.get_doc(self.parenttype, self.parent)
+        return None
+
+    @cached_property
     def worksheet_id_field(self) -> str:
         worksheet_gdoc = (
             self.parent_doc.get_sheet_client()

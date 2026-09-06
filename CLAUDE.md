@@ -48,6 +48,7 @@ myapp/
 # BAD - breaks multitenancy
 CACHED_USERS = frappe.get_all("User")  # Global scope!
 
+
 # GOOD - wrap in function
 def get_users():
     return frappe.get_all("User")
@@ -59,6 +60,7 @@ def get_users():
 # BAD - changes lost after hook completes
 def on_submit(self):
     self.status = "Submitted"  # Not saved!
+
 
 # GOOD - use db_set or save
 def on_submit(self):
@@ -138,6 +140,7 @@ query.orderby("creation", order=frappe.qb.desc)
 ```python
 # BAD - patching at runtime
 from frappe.core.doctype.user import user
+
 user.User.some_method = my_method
 
 # GOOD - use hooks.py doc_events
@@ -151,6 +154,7 @@ result = eval(user_input)
 
 # GOOD
 from frappe.utils.safe_exec import safe_eval
+
 result = safe_eval(user_input)
 ```
 
