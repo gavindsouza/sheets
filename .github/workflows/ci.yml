@@ -21,6 +21,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {version: "13", python-version: "3.9", node-version: "14", frappe-branch: "version-13"}
+          - {version: "14", python-version: "3.10", node-version: "16", frappe-branch: "version-14"}
           - {version: "15", python-version: "3.11", node-version: "18", frappe-branch: "version-15"}
           - {version: "16", python-version: "3.14", node-version: "24", frappe-branch: "version-16"}
           - {version: "develop", python-version: "3.14", node-version: "24", frappe-branch: "develop"}

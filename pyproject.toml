@@ -39,7 +39,7 @@ known-first-party = ["sheets_sync"]
 [tool.weg]
 # Compatibility - which Frappe versions does this app support?
 [tool.weg.compatibility]
-frappe = ["15", "16", "develop"]
+frappe = ["13", "14", "15", "16", "develop"]
 databases = ["mariadb"]
 
 # Development environment settings
