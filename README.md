@@ -43,7 +43,7 @@ Each import fetches only new rows (since the last sync), generates a CSV, create
 
 ```bash
 bench get-app https://github.com/gavindsouza/sheets.git
-bench --site your-site install-app sheets
+bench --site your-site install-app sheets_sync
 ```
 
 ## Configuration
@@ -102,7 +102,7 @@ Imports run automatically per your schedule. You can also trigger an import manu
 
 ```bash
 # Run tests locally
-bench --site your-site run-tests --app sheets
+bench --site your-site run-tests --app sheets_sync
 ```
 
 ## License
