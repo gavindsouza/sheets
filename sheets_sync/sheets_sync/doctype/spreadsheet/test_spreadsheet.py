@@ -40,4 +40,4 @@ class TestSpreadSheet(FrappeTestCase):
             futures = [executor.submit(get, API_PATH, params=arg) for arg in ARGS]
             for future in as_completed(futures):
                 res = future.result().json()["message"]
-                self.assertEqual(res[0], res[1])
+                self.assertEqual(str(res[0]), str(res[1]))

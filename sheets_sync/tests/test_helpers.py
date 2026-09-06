@@ -254,9 +254,8 @@ def patch_parent_doc(mock_parent):
         DocTypeWorksheetMapping,
     )
 
-    return patch.object(
-        DocTypeWorksheetMapping,
-        "parent_doc",
-        new_callable=PropertyMock,
-        return_value=mock_parent,
+    return patch(
+        f"{DocTypeWorksheetMapping.__module__}.DocTypeWorksheetMapping.parent_doc",
+        new=PropertyMock(return_value=mock_parent),
+        create=True,
     )
