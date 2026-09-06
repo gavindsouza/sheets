@@ -22,8 +22,8 @@ jobs:
       matrix:
         include:
           - {version: "15", python-version: "3.11", node-version: "18", frappe-branch: "version-15"}
-          - {version: "16", python-version: "3.12", node-version: "20", frappe-branch: "version-16"}
-          - {version: "develop", python-version: "3.13", node-version: "22", frappe-branch: "develop"}
+          - {version: "16", python-version: "3.14", node-version: "20", frappe-branch: "version-16"}
+          - {version: "develop", python-version: "3.14", node-version: "22", frappe-branch: "develop"}
 
     services:
       mariadb:
@@ -85,5 +85,4 @@ jobs:
           CI: 'Yes'
         run: |
           cd sites && ../env/bin/gunicorn -b 127.0.0.1:8000 -w 4 -t 120 frappe.app:application --preload &
-          cd ..
           bench --site test.localhost run-tests --app sheets_sync
