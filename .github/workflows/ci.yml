@@ -72,6 +72,18 @@ jobs:
           cd frappe-bench
           bench get-app ${{ github.workspace }}
 
+      - name: Align MariaDB server settings (frappe 13)
+        if: matrix.version == '13'
+        working-directory: frappe-bench
+        run: |
+          env/bin/python - <<'PY'
+          import pymysql
+          conn = pymysql.connect(host="127.0.0.1", port=3306, user="root", password="root", autocommit=True)
+          with conn.cursor() as cur:
+              cur.execute("SET GLOBAL character_set_server = 'utf8mb4'")
+              cur.execute("SET GLOBAL collation_server = 'utf8mb4_unicode_ci'")
+          PY
+
       - name: Create test site
         working-directory: frappe-bench
         env:
