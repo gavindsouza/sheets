@@ -233,24 +233,3 @@ class TestApiRetry(FrappeTestCase):
 
         self.assertTrue(len(result) > 0)
         self.assertEqual(mock_client.open_by_url.call_count, 2)
-
-
-class TestPatchImporterSafety(FrappeTestCase):
-    """Tests for patch_importer() using try/finally for safe cleanup."""
-
-    def test_patch_importer_restores_on_exception(self):
-        """patch_importer() restores original method even on exception."""
-        from frappe.core.doctype.data_import.importer import Importer
-
-        from sheets_sync.sheets_sync.doctype.spreadsheet.spreadsheet import patch_importer
-
-        original_method = Importer.update_record
-
-        with self.assertRaises(RuntimeError):
-            with patch_importer():
-                self.assertTrue(hasattr(Importer, "patched"))
-                raise RuntimeError("Simulated failure")
-
-        # After the fix, cleanup should happen even on exception
-        self.assertFalse(hasattr(Importer, "patched"))
-        self.assertEqual(Importer.update_record, original_method)

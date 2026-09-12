@@ -15,6 +15,7 @@ from frappe.model.document import Document
 from frappe.utils import get_link_to_form
 
 from sheets_sync.constants import INSERT, UPDATE, UPSERT
+from sheets_sync.overrides import SheetsImporter
 
 RETRYABLE_STATUS_CODES = {429, 500, 502, 503}
 MAX_RETRIES = 3
@@ -157,7 +158,7 @@ class DocTypeWorksheetMapping(Document):
 
         if len(available_data_updates) > 1:
             di = self.create_data_import("\n".join(available_data_updates), import_type=UPDATE)
-            di.start_import()
+            SheetsImporter(di.reference_doctype, data_import=di).import_data()
             self.last_update_import = di.name
             self.save()
         else:

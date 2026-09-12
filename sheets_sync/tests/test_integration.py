@@ -396,14 +396,16 @@ class TestUpsertImportPipeline(FrappeTestCase):
             mock_ws_for_id.get_all_values.return_value = remote_data
 
             with patch.object(mapping, "save", return_value=mapping):
-                with patch("frappe.core.doctype.data_import.data_import.DataImport.start_import"):
-                    mapping.trigger_upsert_worksheet_import()
+                mapping.trigger_upsert_worksheet_import()
 
         if mapping.last_update_import:
             self._created_imports.append(mapping.last_update_import)
 
             di = frappe.get_doc("Data Import", mapping.last_update_import)
             self.assertEqual(di.import_type, UPDATE)
+            self.assertEqual(di.status, "Success")
+            self.assertEqual(frappe.db.get_value("ToDo", "TODO-001", "status"), "Closed")
+            self._created_todos.append("Buy groceries")
 
     def test_upsert_no_changes_falls_back_to_insert(self):
         """UPSERT with no diff between local and remote falls back to INSERT."""
@@ -793,42 +795,6 @@ class TestErrorScenarios(FrappeTestCase):
         with self.assertRaises(frappe.exceptions.ValidationError):
             with patch.object(mapping, "save", return_value=mapping):
                 mapping.trigger_insert_worksheet_import()
-
-
-class TestImporterPatch(FrappeTestCase):
-    """Tests for the Importer monkey-patching context manager."""
-
-    def test_patch_importer_applies_and_restores(self):
-        """patch_importer() applies the patch and restores the original."""
-        from frappe.core.doctype.data_import.importer import Importer
-
-        from sheets_sync.sheets_sync.doctype.spreadsheet.spreadsheet import patch_importer
-
-        original_method = Importer.update_record
-        self.assertFalse(hasattr(Importer, "patched"))
-
-        with patch_importer():
-            self.assertTrue(hasattr(Importer, "patched"))
-            self.assertNotEqual(Importer.update_record, original_method)
-
-        self.assertFalse(hasattr(Importer, "patched"))
-        self.assertEqual(Importer.update_record, original_method)
-
-    def test_patch_importer_restores_on_exception(self):
-        """patch_importer() restores original even if an exception occurs."""
-        from frappe.core.doctype.data_import.importer import Importer
-
-        from sheets_sync.sheets_sync.doctype.spreadsheet.spreadsheet import patch_importer
-
-        original_method = Importer.update_record
-
-        with self.assertRaises(RuntimeError):
-            with patch_importer():
-                self.assertTrue(hasattr(Importer, "patched"))
-                raise RuntimeError("Simulated failure")
-
-        self.assertFalse(hasattr(Importer, "patched"))
-        self.assertEqual(Importer.update_record, original_method)
 
 
 class TestSchedulerIntegration(FrappeTestCase):

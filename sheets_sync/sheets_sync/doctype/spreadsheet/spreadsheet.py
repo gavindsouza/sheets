@@ -1,7 +1,6 @@
 # Copyright (c) 2023, Gavin D'souza and contributors
 # For license information, please see license.txt
 
-from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 import frappe
@@ -12,7 +11,6 @@ from frappe.utils import get_link_to_form
 
 import sheets_sync
 from sheets_sync.api import describe_cron, get_all_frequency
-from sheets_sync.overrides import update_record_patch
 
 if TYPE_CHECKING:
     from frappe.core.doctype.file import File
@@ -152,23 +150,8 @@ class SpreadSheet(Document):
 
     @frappe.whitelist()
     def trigger_import(self):
-        with patch_importer():
-            for worksheet in self.worksheet_ids:
-                worksheet.trigger_worksheet_import()
-            self.save()
+        for worksheet in self.worksheet_ids:
+            worksheet.trigger_worksheet_import()
+        self.save()
         frappe.msgprint("Import Triggered Successfully", indicator="blue", alert=True)
         return self
-
-
-@contextmanager
-def patch_importer():
-    from frappe.core.doctype.data_import.importer import Importer
-
-    _official_method = Importer.update_record
-    Importer.update_record = update_record_patch
-    Importer.patched = True
-    try:
-        yield
-    finally:
-        Importer.update_record = _official_method
-        del Importer.patched
