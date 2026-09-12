@@ -72,7 +72,9 @@ class TestSheetsImporter(FrappeTestCase):
     def test_update_by_id(self):
         """SheetsImporter matches existing docs by the ID field and updates them."""
         marker = frappe.generate_hash(length=8)
-        todo = frappe.new_doc("ToDo", description=f"Import target {marker}", status="Open")
+        todo = frappe.new_doc("ToDo")
+        todo.description = f"Import target {marker}"
+        todo.status = "Open"
         todo.insert(ignore_permissions=True)
         frappe.db.commit()
         self._created_todos.append(todo.description)
@@ -92,7 +94,9 @@ class TestSheetsImporter(FrappeTestCase):
         marker = frappe.generate_hash(length=8)
         description = f"Unique fallback match {marker}"
         self._set_unique_description(1)
-        todo = frappe.new_doc("ToDo", description=description, status="Open")
+        todo = frappe.new_doc("ToDo")
+        todo.description = description
+        todo.status = "Open"
         todo.insert(ignore_permissions=True)
         frappe.db.commit()
         self._created_todos.append(description)
@@ -123,7 +127,9 @@ class TestSheetsImporter(FrappeTestCase):
     def test_no_changes_returns_existing(self):
         """SheetsImporter does not touch a doc whose row is unchanged."""
         marker = frappe.generate_hash(length=8)
-        todo = frappe.new_doc("ToDo", description=f"Already correct {marker}", status="Open")
+        todo = frappe.new_doc("ToDo")
+        todo.description = f"Already correct {marker}"
+        todo.status = "Open"
         todo.insert(ignore_permissions=True)
         frappe.db.commit()
         self._created_todos.append(todo.description)
